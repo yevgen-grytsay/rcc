@@ -13,7 +13,7 @@ define('PRODUCTION', 1);
 
 class Application
 {
-    private static $mode = PRODUCTION;
+    private static $mode = DEBUG;
 
     public function run()
     {
@@ -25,7 +25,7 @@ class Application
         $calculator  = new Calculator();
         foreach ($iterator as $line) {
             $arguments     = explode(' ', $line);
-            $arguments     = array_map('intval', $arguments);
+            $arguments     = array_map('trim', $arguments);
             $resultLines[] = call_user_func_array([$calculator, 'calculate'], $arguments);
         }
 
@@ -63,41 +63,42 @@ class Calculator
 {
     public function calculate($a, $b)
     {
-        $rootList = [];
-        for ($i = $a; $i <= $b; $i++) {
-            $root                       = $this->calculateNumericRoot($i);
-            $rootList["{$a}-{$b}:{$i}"] = $root;
-        }
+        $digits = range(1, 9, 1);
+        $root = $this->calculateNumericRoot($a);
+        $key = array_search($root, $digits);
 
-        $countMap = [];
-        foreach ($rootList as $root) {
-            if (!array_key_exists($root, $countMap)) {
-                $countMap[$root] = 1;
-            } else {
-                ++$countMap[$root];
-            }
-        }
+        $begin = array_splice($digits, 0, $key);
+        $digits = array_merge($digits, $begin);
 
-        arsort($countMap);
 
-        $resultArray = [];
+        bcscale(0);
+        $fullCycles = bcdiv(bcadd(bcsub($b, $a), 1), 9);
+        $countMap = array_combine($digits, array_fill(1, 9, $fullCycles));
+        $restCount = bcadd(bcsub($b, bcadd($a, bcmul($fullCycles, 9))), 1);
 
-        list($root, $prevCount) = each($countMap);
-        unset($countMap[$root]);
-
-        $resultArray[] = $root;
-        foreach ($countMap as $root => $count) {
-            if ($count == $prevCount) {
-                $resultArray[] = $root;
-            } else {
+        $i = 0;
+        foreach($countMap as &$value) {
+            if ($i >= $restCount) {
                 break;
             }
+
+            $value = bcadd($value, 1);
+            ++$i;
         }
 
-        asort($resultArray);
-        array_unshift($resultArray, count($resultArray));
+        $max = array_reduce($countMap, function($value, $carry) {
+            return max($value, $carry);
+        }, -1);
 
-        return implode(' ', $resultArray);
+        $countMap = array_filter($countMap, function($value) use ($max) {
+            return bccomp($value, $max) === 0;
+        });
+
+        $countList = array_keys($countMap);
+        asort($countList);
+        array_unshift($countList, count($countList));
+
+        return implode(' ', $countList);
     }
 
     protected function calculateNumericRoot($number)
@@ -107,7 +108,7 @@ class Calculator
             $digits = str_split($number);
             $sum    = 0;
             foreach ($digits as $digit) {
-                $sum += intval($digit);
+                $sum = bcadd($sum, $digit);
             }
 
             $number = strval($sum);
