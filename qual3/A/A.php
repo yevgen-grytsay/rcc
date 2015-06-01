@@ -13,7 +13,7 @@ define('PRODUCTION', 1);
 
 class Application
 {
-    private static $mode = PRODUCTION;
+    private static $mode = DEBUG;
 
     public function run()
     {
@@ -70,30 +70,14 @@ class Calculator
      */
     public function calculate($one, $two, $price)
     {
-        $isPar = $price % 2 == 0;
-        if (!$isPar && $one == 0) {
-            return 'NO';
-        }
+        $sum = $one + $two*2;
+        $requireOne = $price % 2;
 
-        $twosNeeded = floor($price / 2);
-
-        /**
-         * Cover by twos
-         */
-        $twosDec = min($twosNeeded, $two);
-        $price -= $twosDec * 2;
-
-        if ($price == 0) {
+        if ($sum >= $price && $one >= $requireOne) {
             return 'YES';
         }
-
-        /**
-         * Cover by ones
-         */
-        if ($price > $one) {
+        else {
             return 'NO';
-        } else {
-            return 'YES';
         }
     }
 }
