@@ -108,12 +108,14 @@ class Calculator
                     && $snail_1->downSpeed < $snail_2->downSpeed
                 );
 
+            /**
+             * t < 0 - улитки не встретятся в будущем.
+             */
             if ($isDay) {
                 $t = ($snail_1->position - $snail_2->position) / ($snail_2->upSpeed - $snail_1->upSpeed);
             } else {
-                $t = ($snail_1->position - $snail_2->position) / ($snail_2->downSpeed - $snail_1->downSpeed);
+                $t = ($snail_1->position - $snail_2->position) / (-1*$snail_2->downSpeed - -1*$snail_1->downSpeed);
             }
-            $t = abs($t);
 
             /**
              * Улитки не успеют встретиться до окончания периода.
